@@ -1,0 +1,39 @@
+{
+  "name": "VàngBạc.VN - Theo dõi tài sản kim loại quý",
+  "short_name": "VàngBạc.VN",
+  "description": "Theo dõi giá vàng, bạc Việt Nam (SJC, PNJ, BTMC) và quản lý danh mục tài sản đầu tư.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#120e07",
+  "theme_color": "#d4a017",
+  "orientation": "portrait-primary",
+  "lang": "vi",
+  "categories": ["finance", "utilities"],
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "screenshots": [],
+  "shortcuts": [
+    {
+      "name": "Bảng giá",
+      "url": "/#/prices",
+      "description": "Xem giá vàng bạc mới nhất"
+    },
+    {
+      "name": "Danh mục",
+      "url": "/#/portfolio",
+      "description": "Quản lý tài sản của bạn"
+    }
+  ]
+}
