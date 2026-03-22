@@ -3,10 +3,8 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Eye, EyeOff, Coins } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { useToast } from "@/hooks/use-toast";
 import { loginApi, registerApi } from "@/hooks/use-auth";
 import { queryClient } from "@/lib/queryClient";
@@ -24,19 +22,21 @@ const registerSchema = z.object({
   confirm: z.string(),
 }).refine((d) => d.password === d.confirm, { message: "Mật khẩu không khớp", path: ["confirm"] });
 
+const inputClass = "flex h-9 w-full rounded-md border border-input bg-background px-3 py-2 text-base ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 md:text-sm";
+const labelClass = "text-sm font-medium leading-none";
+const errorClass = "text-sm font-medium text-destructive";
+
 export default function AuthPage() {
   const [mode, setMode] = useState<"login" | "register">("login");
   const [showPwd, setShowPwd] = useState(false);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 
-  // Login form
   const loginForm = useForm<z.infer<typeof loginSchema>>({
     resolver: zodResolver(loginSchema),
     defaultValues: { email: "", password: "" },
   });
 
-  // Register form
   const registerForm = useForm<z.infer<typeof registerSchema>>({
     resolver: zodResolver(registerSchema),
     defaultValues: { name: "", email: "", phone: "", password: "", confirm: "" },
@@ -112,85 +112,120 @@ export default function AuthPage() {
 
         <CardContent>
           {mode === "login" ? (
-            <Form {...loginForm}>
-              <form onSubmit={loginForm.handleSubmit(handleLogin)} className="space-y-4">
-                <FormField name="email" control={loginForm.control} render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Email</FormLabel>
-                    <FormControl>
-                      <Input type="email" placeholder="example@gmail.com" {...field} data-testid="input-login-email" />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )} />
-                <FormField name="password" control={loginForm.control} render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Mật khẩu</FormLabel>
-                    <FormControl>
-                      <div className="relative">
-                        <Input type={showPwd ? "text" : "password"} placeholder="••••••" {...field} data-testid="input-login-password" />
-                        <button type="button" className="absolute right-3 top-2.5 text-muted-foreground" onClick={() => setShowPwd(!showPwd)}>
-                          {showPwd ? <EyeOff size={16} /> : <Eye size={16} />}
-                        </button>
-                      </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )} />
-                <Button type="submit" className="w-full bg-yellow-600 hover:bg-yellow-500 text-black font-semibold" disabled={loading} data-testid="btn-login">
-                  {loading ? "Đang xử lý..." : "Đăng nhập"}
-                </Button>
-              </form>
-            </Form>
+            <form onSubmit={loginForm.handleSubmit(handleLogin)} className="space-y-4">
+              <div className="space-y-2">
+                <label htmlFor="login-email" className={labelClass}>Email</label>
+                <input
+                  id="login-email"
+                  type="email"
+                  placeholder="example@gmail.com"
+                  className={inputClass}
+                  data-testid="input-login-email"
+                  {...loginForm.register("email")}
+                />
+                {loginForm.formState.errors.email && (
+                  <p className={errorClass}>{loginForm.formState.errors.email.message}</p>
+                )}
+              </div>
+              <div className="space-y-2">
+                <label htmlFor="login-password" className={labelClass}>Mật khẩu</label>
+                <div className="relative">
+                  <input
+                    id="login-password"
+                    type={showPwd ? "text" : "password"}
+                    placeholder="••••••"
+                    className={inputClass}
+                    data-testid="input-login-password"
+                    {...loginForm.register("password")}
+                  />
+                  <button type="button" className="absolute right-3 top-2.5 text-muted-foreground" onClick={() => setShowPwd(!showPwd)}>
+                    {showPwd ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
+                {loginForm.formState.errors.password && (
+                  <p className={errorClass}>{loginForm.formState.errors.password.message}</p>
+                )}
+              </div>
+              <Button type="submit" className="w-full bg-yellow-600 hover:bg-yellow-500 text-black font-semibold" disabled={loading} data-testid="btn-login">
+                {loading ? "Đang xử lý..." : "Đăng nhập"}
+              </Button>
+            </form>
           ) : (
-            <Form {...registerForm}>
-              <form onSubmit={registerForm.handleSubmit(handleRegister)} className="space-y-3">
-                <FormField name="name" control={registerForm.control} render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Họ tên</FormLabel>
-                    <FormControl><Input placeholder="Nguyễn Văn A" {...field} data-testid="input-reg-name" /></FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )} />
-                <FormField name="email" control={registerForm.control} render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Email</FormLabel>
-                    <FormControl><Input type="email" placeholder="example@gmail.com" {...field} data-testid="input-reg-email" /></FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )} />
-                <FormField name="phone" control={registerForm.control} render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Số điện thoại (tùy chọn)</FormLabel>
-                    <FormControl><Input placeholder="0901234567" {...field} data-testid="input-reg-phone" /></FormControl>
-                  </FormItem>
-                )} />
-                <FormField name="password" control={registerForm.control} render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Mật khẩu</FormLabel>
-                    <FormControl>
-                      <div className="relative">
-                        <Input type={showPwd ? "text" : "password"} placeholder="Tối thiểu 6 ký tự" {...field} data-testid="input-reg-password" />
-                        <button type="button" className="absolute right-3 top-2.5 text-muted-foreground" onClick={() => setShowPwd(!showPwd)}>
-                          {showPwd ? <EyeOff size={16} /> : <Eye size={16} />}
-                        </button>
-                      </div>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )} />
-                <FormField name="confirm" control={registerForm.control} render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Nhập lại mật khẩu</FormLabel>
-                    <FormControl><Input type="password" placeholder="••••••" {...field} data-testid="input-reg-confirm" /></FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )} />
-                <Button type="submit" className="w-full bg-yellow-600 hover:bg-yellow-500 text-black font-semibold mt-2" disabled={loading} data-testid="btn-register">
-                  {loading ? "Đang tạo tài khoản..." : "Tạo tài khoản"}
-                </Button>
-              </form>
-            </Form>
+            <form onSubmit={registerForm.handleSubmit(handleRegister)} className="space-y-3">
+              <div className="space-y-2">
+                <label htmlFor="reg-name" className={labelClass}>Họ tên</label>
+                <input
+                  id="reg-name"
+                  placeholder="Nguyễn Văn A"
+                  className={inputClass}
+                  data-testid="input-reg-name"
+                  {...registerForm.register("name")}
+                />
+                {registerForm.formState.errors.name && (
+                  <p className={errorClass}>{registerForm.formState.errors.name.message}</p>
+                )}
+              </div>
+              <div className="space-y-2">
+                <label htmlFor="reg-email" className={labelClass}>Email</label>
+                <input
+                  id="reg-email"
+                  type="email"
+                  placeholder="example@gmail.com"
+                  className={inputClass}
+                  data-testid="input-reg-email"
+                  {...registerForm.register("email")}
+                />
+                {registerForm.formState.errors.email && (
+                  <p className={errorClass}>{registerForm.formState.errors.email.message}</p>
+                )}
+              </div>
+              <div className="space-y-2">
+                <label htmlFor="reg-phone" className={labelClass}>Số điện thoại (tùy chọn)</label>
+                <input
+                  id="reg-phone"
+                  placeholder="0901234567"
+                  className={inputClass}
+                  data-testid="input-reg-phone"
+                  {...registerForm.register("phone")}
+                />
+              </div>
+              <div className="space-y-2">
+                <label htmlFor="reg-password" className={labelClass}>Mật khẩu</label>
+                <div className="relative">
+                  <input
+                    id="reg-password"
+                    type={showPwd ? "text" : "password"}
+                    placeholder="Tối thiểu 6 ký tự"
+                    className={inputClass}
+                    data-testid="input-reg-password"
+                    {...registerForm.register("password")}
+                  />
+                  <button type="button" className="absolute right-3 top-2.5 text-muted-foreground" onClick={() => setShowPwd(!showPwd)}>
+                    {showPwd ? <EyeOff size={16} /> : <Eye size={16} />}
+                  </button>
+                </div>
+                {registerForm.formState.errors.password && (
+                  <p className={errorClass}>{registerForm.formState.errors.password.message}</p>
+                )}
+              </div>
+              <div className="space-y-2">
+                <label htmlFor="reg-confirm" className={labelClass}>Nhập lại mật khẩu</label>
+                <input
+                  id="reg-confirm"
+                  type="password"
+                  placeholder="••••••"
+                  className={inputClass}
+                  data-testid="input-reg-confirm"
+                  {...registerForm.register("confirm")}
+                />
+                {registerForm.formState.errors.confirm && (
+                  <p className={errorClass}>{registerForm.formState.errors.confirm.message}</p>
+                )}
+              </div>
+              <Button type="submit" className="w-full bg-yellow-600 hover:bg-yellow-500 text-black font-semibold mt-2" disabled={loading} data-testid="btn-register">
+                {loading ? "Đang tạo tài khoản..." : "Tạo tài khoản"}
+              </Button>
+            </form>
           )}
         </CardContent>
       </Card>
