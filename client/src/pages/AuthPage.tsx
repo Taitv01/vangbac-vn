@@ -308,9 +308,14 @@ export default function AuthPage() {
         </CardContent>
       </Card>
 
-      <p className="text-xs text-muted-foreground mt-6 text-center">
-        Dữ liệu được lưu trữ bảo mật · Miễn phí hoàn toàn
-      </p>
+      <div className="text-xs text-muted-foreground mt-6 text-center space-y-1">
+        <p>Dữ liệu được lưu trữ bảo mật · Miễn phí hoàn toàn</p>
+        <p className="pt-2 border-t border-border/30 mt-2">
+          <span className="font-medium" style={{ color: "#d4a017" }}>Thái Văn Tài</span>
+          {" · "}Mobi/Zalo: <a href="tel:0967686821" className="hover:text-yellow-400 transition-colors">0967 6868 21</a>
+          {" · "}Email: <a href="mailto:Thaivantai.tcnh@gmail.com" className="hover:text-yellow-400 transition-colors">Thaivantai.tcnh@gmail.com</a>
+        </p>
+      </div>
     </div>
   );
 }

@@ -5,7 +5,9 @@ import type {
   PriceHistory, InsertPriceHistory,
 } from "@shared/schema";
 
-const DATA_FILE = path.join(process.cwd(), "data.json");
+// Use /app/data/ for Railway Volume persistence, fallback to CWD for local dev
+const DATA_DIR = fs.existsSync("/app/data") ? "/app/data" : process.cwd();
+const DATA_FILE = path.join(DATA_DIR, "data.json");
 
 interface DataStore {
   users: User[];

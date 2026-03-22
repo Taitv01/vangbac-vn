@@ -203,6 +203,11 @@ export default function Dashboard() {
       )}
 
       <p className="text-xs text-muted-foreground text-center mt-4">Cập nhật lúc {now} · Nguồn: BTMC</p>
+      <p className="text-xs text-muted-foreground text-center mt-2 pt-2 border-t border-border/30">
+        <span className="font-medium" style={{ color: "#d4a017" }}>Thái Văn Tài</span>
+        {" · "}Mobi/Zalo: <a href="tel:0967686821" className="hover:text-yellow-400 transition-colors">0967 6868 21</a>
+        {" · "}Email: <a href="mailto:Thaivantai.tcnh@gmail.com" className="hover:text-yellow-400 transition-colors">Thaivantai.tcnh@gmail.com</a>
+      </p>
     </div>
   );
 }
