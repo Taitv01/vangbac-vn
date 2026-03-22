@@ -100,16 +100,28 @@ export default function AuthPage() {
   const handleGoogleLogin = async () => {
     setLoading(true);
     try {
-      // @ts-ignore — google.accounts loaded via script tag
       const google = (window as any).google;
       if (!google?.accounts?.id) {
-        toast({ title: "Lỗi", description: "Google SDK chưa tải xong, vui lòng thử lại", variant: "destructive" });
+        toast({ title: "Lỗi", description: "Google SDK chưa tải xong, vui lòng thử lại sau vài giây", variant: "destructive" });
         setLoading(false);
         return;
       }
+      const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || "";
+      if (!clientId) {
+        toast({ title: "Lỗi", description: "Chưa cấu hình Google Client ID", variant: "destructive" });
+        setLoading(false);
+        return;
+      }
+      // Use renderButton approach with a hidden div for reliable popup
+      const container = document.createElement("div");
+      container.style.position = "fixed";
+      container.style.top = "-9999px";
+      document.body.appendChild(container);
+
       google.accounts.id.initialize({
-        client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID || "",
+        client_id: clientId,
         callback: async (response: any) => {
+          document.body.removeChild(container);
           try {
             const result = await googleLoginApi(response.credential);
             if (result.success) {
@@ -124,8 +136,31 @@ export default function AuthPage() {
             setLoading(false);
           }
         },
+        ux_mode: "popup",
       });
-      google.accounts.id.prompt();
+
+      google.accounts.id.renderButton(container, {
+        type: "standard",
+        size: "large",
+        width: 300,
+      });
+
+      // Auto-click the rendered Google button
+      setTimeout(() => {
+        const btn = container.querySelector('[role="button"]') as HTMLElement;
+        if (btn) {
+          btn.click();
+        } else {
+          // Fallback: try prompt as last resort
+          google.accounts.id.prompt((notification: any) => {
+            if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
+              document.body.removeChild(container);
+              toast({ title: "Lỗi", description: "Không thể hiển thị Google login. Hãy thử trên Chrome/Safari.", variant: "destructive" });
+              setLoading(false);
+            }
+          });
+        }
+      }, 300);
     } catch (e: any) {
       toast({ title: "Lỗi", description: "Không thể kết nối Google", variant: "destructive" });
       setLoading(false);
