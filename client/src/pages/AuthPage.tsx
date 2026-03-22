@@ -106,7 +106,7 @@ export default function AuthPage() {
         setLoading(false);
         return;
       }
-      const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || "";
+      const clientId = import.meta.env.VITE_GOOGLE_CLIENT_ID || "110537221530-6v6ts7215dm670bqm6kb0kavco7doko4.apps.googleusercontent.com";
       if (!clientId) {
         toast({ title: "Lỗi", description: "Chưa cấu hình Google Client ID", variant: "destructive" });
         setLoading(false);
