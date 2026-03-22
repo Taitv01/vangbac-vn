@@ -8,6 +8,7 @@ export interface AuthUser {
   phone?: string;
   address?: string;
   createdAt: string;
+  provider?: "local" | "google" | "facebook";
 }
 
 interface AuthState {
@@ -16,7 +17,6 @@ interface AuthState {
   loading: boolean;
 }
 
-// Global state — tránh localStorage (bị block trong sandbox)
 let globalAuth: AuthState = { user: null, token: null, loading: true };
 let listeners: Array<() => void> = [];
 
@@ -24,9 +24,6 @@ function notify() { listeners.forEach((fn) => fn()); }
 
 export function getToken(): string | null { return globalAuth.token; }
 
-// In-memory token store (works in both iframe sandbox and standalone PWA)
-// Note: tokens are lost on page refresh — user must log in again.
-// In standalone PWA mode, the app rarely refreshes, so this is acceptable.
 let _tokenStore: { token: string; user: AuthUser } | null = null;
 
 export function setAuth(token: string, user: AuthUser) {
@@ -41,7 +38,6 @@ export function clearAuth() {
   notify();
 }
 
-// Restore from in-memory store (called on mount)
 export function initAuth() {
   if (_tokenStore) {
     globalAuth = { user: _tokenStore.user, token: _tokenStore.token, loading: false };
@@ -61,7 +57,6 @@ export function useAuth() {
   return globalAuth;
 }
 
-// API helpers
 export async function loginApi(email: string, password: string) {
   const res = await apiRequest("POST", "/api/auth/login", { email, password });
   const data = await res.json();
@@ -71,6 +66,20 @@ export async function loginApi(email: string, password: string) {
 
 export async function registerApi(email: string, name: string, password: string, phone?: string) {
   const res = await apiRequest("POST", "/api/auth/register", { email, name, password, phone });
+  const data = await res.json();
+  if (data.success) setAuth(data.token, data.user);
+  return data;
+}
+
+export async function googleLoginApi(idToken: string) {
+  const res = await apiRequest("POST", "/api/auth/google", { token: idToken });
+  const data = await res.json();
+  if (data.success) setAuth(data.token, data.user);
+  return data;
+}
+
+export async function facebookLoginApi(accessToken: string) {
+  const res = await apiRequest("POST", "/api/auth/facebook", { token: accessToken });
   const data = await res.json();
   if (data.success) setAuth(data.token, data.user);
   return data;

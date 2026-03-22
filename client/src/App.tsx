@@ -7,6 +7,7 @@ import { Toaster } from "@/components/ui/toaster";
 import Dashboard from "@/pages/Dashboard";
 import Portfolio from "@/pages/Portfolio";
 import Prices from "@/pages/Prices";
+import NewsPage from "@/pages/NewsPage";
 import NotFound from "@/pages/not-found";
 import BottomNav from "@/components/BottomNav";
 import AuthPage from "@/pages/AuthPage";
@@ -52,6 +53,7 @@ function AppContent() {
           <Route path="/" component={Dashboard} />
           <Route path="/portfolio" component={Portfolio} />
           <Route path="/prices" component={Prices} />
+          <Route path="/news" component={NewsPage} />
           <Route component={NotFound} />
         </Switch>
         <BottomNav />

@@ -4,7 +4,7 @@ import type { Request, Response, NextFunction } from "express";
 import { getUserById } from "./storage";
 
 const JWT_SECRET = process.env.JWT_SECRET || "vangbac-secret-key-2026-change-in-prod";
-const JWT_EXPIRES = "30d"; // Token hết hạn sau 30 ngày
+const JWT_EXPIRES = "30d";
 
 export interface JWTPayload {
   userId: number;
@@ -31,7 +31,6 @@ export function verifyToken(token: string): JWTPayload | null {
   }
 }
 
-// Express middleware — đính kèm user vào req
 export function requireAuth(req: Request, res: Response, next: NextFunction) {
   const authHeader = req.headers.authorization;
   if (!authHeader?.startsWith("Bearer ")) {
@@ -60,4 +59,34 @@ export function optionalAuth(req: Request, _res: Response, next: NextFunction) {
     }
   }
   next();
+}
+
+// Google OAuth — verify ID token via Google's tokeninfo endpoint
+export async function verifyGoogleToken(idToken: string): Promise<{ email: string; name: string; picture?: string } | null> {
+  try {
+    const res = await fetch(`https://oauth2.googleapis.com/tokeninfo?id_token=${idToken}`, {
+      signal: AbortSignal.timeout(5000),
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    if (!data.email || !data.email_verified) return null;
+    return { email: data.email, name: data.name || data.email.split("@")[0], picture: data.picture };
+  } catch {
+    return null;
+  }
+}
+
+// Facebook OAuth — verify access token via Graph API
+export async function verifyFacebookToken(accessToken: string): Promise<{ email: string; name: string; picture?: string } | null> {
+  try {
+    const res = await fetch(`https://graph.facebook.com/me?fields=id,name,email,picture.type(large)&access_token=${accessToken}`, {
+      signal: AbortSignal.timeout(5000),
+    });
+    if (!res.ok) return null;
+    const data = await res.json();
+    if (!data.email) return null;
+    return { email: data.email, name: data.name || "User", picture: data.picture?.data?.url };
+  } catch {
+    return null;
+  }
 }

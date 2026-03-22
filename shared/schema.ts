@@ -10,7 +10,12 @@ export interface User {
   phone?: string;
   address?: string;
   avatar?: string;
+  provider?: "local" | "google" | "facebook";
 }
+
+export const socialLoginSchema = z.object({
+  token: z.string().min(1),
+});
 
 export const registerSchema = z.object({
   email: z.string().email("Email không hợp lệ"),

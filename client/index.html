@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="vi" class="dark">
   <head>
     <!--
@@ -11,18 +11,24 @@
             Created with Perplexity Computer
             https://www.perplexity.ai/computer
     -->
-    <meta name="generator" content="Perplexity Computer">
-    <meta name="author" content="Perplexity Computer">
-    <meta property="og:see_also" content="https://www.perplexity.ai/computer">
-    <link rel="author" href="https://www.perplexity.ai/computer">
+    <meta name="generator" content="Perplexity Computer" />
+    <meta name="author" content="Perplexity Computer" />
+    <meta property="og:see_also" content="https://www.perplexity.ai/computer" />
+    <link rel="author" href="https://www.perplexity.ai/computer" />
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1"
+    />
 
     <!-- PWA Meta Tags -->
     <meta name="theme-color" content="#d4a017" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta
+      name="apple-mobile-web-app-status-bar-style"
+      content="black-translucent"
+    />
     <meta name="apple-mobile-web-app-title" content="VàngBạc.VN" />
 
     <!-- PWA Manifest -->
@@ -33,29 +39,65 @@
     <link rel="apple-touch-icon" href="/icon-192.png" />
 
     <title>VàngBạc.VN - Theo dõi giá trị tài sản đầu tư</title>
-    <meta name="description" content="Theo dõi giá vàng, bạc Việt Nam (SJC, PNJ, BTMC) và quản lý danh mục tài sản đầu tư kim loại quý." />
+    <meta
+      name="description"
+      content="Theo dõi giá vàng, bạc Việt Nam (SJC, PNJ, BTMC) và quản lý danh mục tài sản đầu tư kim loại quý."
+    />
 
     <!-- Open Graph -->
-    <meta property="og:title" content="VàngBạc.VN - Theo dõi tài sản kim loại quý" />
-    <meta property="og:description" content="Ứng dụng theo dõi giá vàng, bạc Việt Nam và quản lý danh mục đầu tư. Cài trực tiếp từ trình duyệt." />
+    <meta
+      property="og:title"
+      content="VàngBạc.VN - Theo dõi tài sản kim loại quý"
+    />
+    <meta
+      property="og:description"
+      content="Ứng dụng theo dõi giá vàng, bạc Việt Nam và quản lý danh mục đầu tư. Cài trực tiếp từ trình duyệt."
+    />
     <meta property="og:type" content="website" />
 
     <!-- Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap"
+      rel="stylesheet"
+    />
 
-    <!-- Service Worker Registration -->
+    <!-- Service Worker: force unregister old cached versions -->
     <script>
-      if ('serviceWorker' in navigator) {
-        window.addEventListener('load', function() {
-          navigator.serviceWorker.register('/sw.js').then(function(reg) {
-            console.log('SW registered:', reg.scope);
-          }).catch(function(err) {
-            console.log('SW registration failed:', err);
+      if ("serviceWorker" in navigator) {
+        navigator.serviceWorker.getRegistrations().then(function (regs) {
+          regs.forEach(function (r) {
+            r.unregister();
           });
         });
+        if ("caches" in window) {
+          caches.keys().then(function (names) {
+            names.forEach(function (n) {
+              caches.delete(n);
+            });
+          });
+        }
       }
+    </script>
+
+    <!-- Google Identity Services SDK -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+
+    <!-- Facebook SDK -->
+    <script
+      async
+      defer
+      crossorigin="anonymous"
+      src="https://connect.facebook.net/vi_VN/sdk.js#xfbml=parse&version=v19.0"
+      nonce="abc123"
+    ></script>
+    <script>
+      window.fbAsyncInit = function () {
+        if (window.FB) {
+          FB.init({ version: "v19.0", cookie: true, xfbml: true });
+        }
+      };
     </script>
   </head>
   <body>

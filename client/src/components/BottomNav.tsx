@@ -1,10 +1,11 @@
 import { useLocation } from "wouter";
 import { Link } from "wouter";
-import { LayoutDashboard, TrendingUp, Wallet } from "lucide-react";
+import { LayoutDashboard, TrendingUp, Wallet, Newspaper } from "lucide-react";
 
 const navItems = [
   { path: "/", label: "Tổng quan", icon: LayoutDashboard },
   { path: "/prices", label: "Bảng giá", icon: TrendingUp },
+  { path: "/news", label: "Tin tức", icon: Newspaper },
   { path: "/portfolio", label: "Danh mục", icon: Wallet },
 ];
 
@@ -20,7 +21,7 @@ export default function BottomNav() {
             <Link
               key={path}
               href={path}
-              className="flex flex-col items-center gap-1 min-w-[64px] py-1"
+              className="flex flex-col items-center gap-1 min-w-[56px] py-1"
               data-testid={`nav-${label}`}
             >
               <Icon

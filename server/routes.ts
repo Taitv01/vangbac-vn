@@ -2,7 +2,7 @@ import type { Express, Request } from "express";
 import { type Server } from "http";
 import { XMLParser } from "fast-xml-parser";
 import {
-  registerSchema, loginSchema, updateProfileSchema, insertHoldingSchema,
+  registerSchema, loginSchema, updateProfileSchema, insertHoldingSchema, socialLoginSchema,
 } from "@shared/schema";
 import {
   getUserByEmail, createUser, updateUser, getAllUsers,
@@ -11,6 +11,7 @@ import {
 } from "./storage";
 import {
   hashPassword, verifyPassword, signToken, requireAuth,
+  verifyGoogleToken, verifyFacebookToken,
 } from "./auth";
 import type { User } from "@shared/schema";
 
@@ -64,6 +65,88 @@ async function fetchSpotPrices() {
   }
 }
 
+// ─── News RSS ─────────────────────────────────────────────────────────────────
+interface NewsItem {
+  title: string;
+  link: string;
+  source: string;
+  pubDate: string;
+  description: string;
+}
+
+let newsCache: { data: NewsItem[]; fetchedAt: number } = { data: [], fetchedAt: 0 };
+const NEWS_CACHE_TTL = 15 * 60 * 1000; // 15 minutes
+
+const NEWS_FEEDS = [
+  { url: "https://vnexpress.net/rss/kinh-doanh/hang-hoa.rss", source: "VNExpress" },
+  { url: "https://vnexpress.net/rss/kinh-doanh.rss", source: "VNExpress" },
+];
+
+function stripHtml(html: string): string {
+  return html.replace(/<[^>]*>/g, "").replace(/&nbsp;/g, " ").replace(/&amp;/g, "&").replace(/&lt;/g, "<").replace(/&gt;/g, ">").trim();
+}
+
+async function fetchNews(): Promise<NewsItem[]> {
+  if (Date.now() - newsCache.fetchedAt < NEWS_CACHE_TTL && newsCache.data.length > 0) {
+    return newsCache.data;
+  }
+
+  const parser = new XMLParser({ ignoreAttributes: false, attributeNamePrefix: "" });
+  const allItems: NewsItem[] = [];
+
+  for (const feed of NEWS_FEEDS) {
+    try {
+      const res = await fetch(feed.url, { signal: AbortSignal.timeout(8000) });
+      const xml = await res.text();
+      const parsed = parser.parse(xml);
+      const channel = parsed?.rss?.channel;
+      if (!channel?.item) continue;
+      const items = Array.isArray(channel.item) ? channel.item : [channel.item];
+
+      for (const item of items.slice(0, 15)) {
+        const title = item.title || "";
+        const desc = stripHtml(item.description || "");
+        const lowerTitle = (title + " " + desc).toLowerCase();
+        // Filter for gold/silver related news
+        if (lowerTitle.includes("vàng") || lowerTitle.includes("bạc") || lowerTitle.includes("gold") || lowerTitle.includes("silver") || lowerTitle.includes("kim loại") || lowerTitle.includes("sjc") || lowerTitle.includes("quý")) {
+          allItems.push({
+            title,
+            link: item.link || "",
+            source: feed.source,
+            pubDate: item.pubDate || new Date().toISOString(),
+            description: desc.substring(0, 200),
+          });
+        }
+      }
+    } catch (e) {
+      console.error(`Failed to fetch news from ${feed.source}:`, e);
+    }
+  }
+
+  // Also try to get some general precious metal news
+  try {
+    const btmcRes = await fetch("https://www.btmc.vn/", { signal: AbortSignal.timeout(5000) });
+    // If BTMC has RSS we can parse it, otherwise skip
+  } catch {}
+
+  // Sort by date descending
+  allItems.sort((a, b) => new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime());
+
+  // Remove duplicates by title similarity
+  const unique: NewsItem[] = [];
+  const seen = new Set<string>();
+  for (const item of allItems) {
+    const key = item.title.toLowerCase().substring(0, 50);
+    if (!seen.has(key)) {
+      seen.add(key);
+      unique.push(item);
+    }
+  }
+
+  newsCache = { data: unique.slice(0, 30), fetchedAt: Date.now() };
+  return newsCache.data;
+}
+
 // ─── Routes ───────────────────────────────────────────────────────────────────
 export async function registerRoutes(httpServer: Server, app: Express): Promise<void> {
 
@@ -76,7 +159,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     const { email, name, password, phone } = parsed.data;
     if (getUserByEmail(email)) return res.status(409).json({ success: false, error: "Email đã được sử dụng" });
     const passwordHash = await hashPassword(password);
-    const user = createUser({ email, name, passwordHash, phone, createdAt: new Date().toISOString() });
+    const user = createUser({ email, name, passwordHash, phone, createdAt: new Date().toISOString(), provider: "local" });
     const token = signToken({ userId: user.id, email: user.email });
     const { passwordHash: _, ...safeUser } = user;
     return res.json({ success: true, token, user: safeUser });
@@ -91,6 +174,55 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     if (!user) return res.status(401).json({ success: false, error: "Email hoặc mật khẩu không đúng" });
     const ok = await verifyPassword(password, user.passwordHash);
     if (!ok) return res.status(401).json({ success: false, error: "Email hoặc mật khẩu không đúng" });
+    const token = signToken({ userId: user.id, email: user.email });
+    const { passwordHash: _, ...safeUser } = user;
+    return res.json({ success: true, token, user: safeUser });
+  });
+
+  // Google OAuth
+  app.post("/api/auth/google", async (req, res) => {
+    const parsed = socialLoginSchema.safeParse(req.body);
+    if (!parsed.success) return res.status(400).json({ success: false, error: "Token không hợp lệ" });
+    const googleUser = await verifyGoogleToken(parsed.data.token);
+    if (!googleUser) return res.status(401).json({ success: false, error: "Google token không hợp lệ hoặc đã hết hạn" });
+
+    let user = getUserByEmail(googleUser.email);
+    if (!user) {
+      // Auto-register
+      const passwordHash = await hashPassword(Math.random().toString(36).slice(2) + Date.now().toString(36));
+      user = createUser({
+        email: googleUser.email,
+        name: googleUser.name,
+        passwordHash,
+        createdAt: new Date().toISOString(),
+        provider: "google",
+        avatar: googleUser.picture,
+      });
+    }
+    const token = signToken({ userId: user.id, email: user.email });
+    const { passwordHash: _, ...safeUser } = user;
+    return res.json({ success: true, token, user: safeUser });
+  });
+
+  // Facebook OAuth
+  app.post("/api/auth/facebook", async (req, res) => {
+    const parsed = socialLoginSchema.safeParse(req.body);
+    if (!parsed.success) return res.status(400).json({ success: false, error: "Token không hợp lệ" });
+    const fbUser = await verifyFacebookToken(parsed.data.token);
+    if (!fbUser) return res.status(401).json({ success: false, error: "Facebook token không hợp lệ hoặc đã hết hạn" });
+
+    let user = getUserByEmail(fbUser.email);
+    if (!user) {
+      const passwordHash = await hashPassword(Math.random().toString(36).slice(2) + Date.now().toString(36));
+      user = createUser({
+        email: fbUser.email,
+        name: fbUser.name,
+        passwordHash,
+        createdAt: new Date().toISOString(),
+        provider: "facebook",
+        avatar: fbUser.picture,
+      });
+    }
     const token = signToken({ userId: user.id, email: user.email });
     const { passwordHash: _, ...safeUser } = user;
     return res.json({ success: true, token, user: safeUser });
@@ -142,6 +274,17 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     const { type, product } = req.query;
     const history = getPriceHistory(String(type || "gold"), String(product || "SJC"), 60);
     res.json({ success: true, data: history });
+  });
+
+  // ── News (public) ──────────────────────────────────────────────────────────
+
+  app.get("/api/news", async (_req, res) => {
+    try {
+      const news = await fetchNews();
+      res.json({ success: true, data: news });
+    } catch (err: any) {
+      res.status(500).json({ success: false, error: err.message, data: [] });
+    }
   });
 
   // ── Holdings (protected) ────────────────────────────────────────────────────
