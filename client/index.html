@@ -89,13 +89,12 @@
       async
       defer
       crossorigin="anonymous"
-      src="https://connect.facebook.net/vi_VN/sdk.js#xfbml=parse&version=v19.0"
-      nonce="abc123"
+      src="https://connect.facebook.net/vi_VN/sdk.js#xfbml=parse&version=v19.0&appId=820613914456440"
     ></script>
     <script>
       window.fbAsyncInit = function () {
         if (window.FB) {
-          FB.init({ version: "v19.0", cookie: true, xfbml: true });
+          FB.init({ appId: '820613914456440', version: "v19.0", cookie: true, xfbml: true });
         }
       };
     </script>

@@ -1,4 +1,4 @@
-import { useState, useEffect, createContext, useContext } from "react";
+import { useState, useEffect } from "react";
 import { apiRequest } from "@/lib/queryClient";
 
 export interface AuthUser {
@@ -17,30 +17,54 @@ interface AuthState {
   loading: boolean;
 }
 
-let globalAuth: AuthState = { user: null, token: null, loading: true };
+const STORAGE_KEY = "vangbac_auth";
+
+function loadFromStorage(): { token: string; user: AuthUser } | null {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (parsed?.token && parsed?.user) return parsed;
+  } catch {}
+  return null;
+}
+
+function saveToStorage(token: string, user: AuthUser) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify({ token, user }));
+}
+
+function clearStorage() {
+  localStorage.removeItem(STORAGE_KEY);
+}
+
+// Initialize from localStorage
+const saved = loadFromStorage();
+let globalAuth: AuthState = saved
+  ? { user: saved.user, token: saved.token, loading: false }
+  : { user: null, token: null, loading: true };
+
 let listeners: Array<() => void> = [];
 
 function notify() { listeners.forEach((fn) => fn()); }
 
 export function getToken(): string | null { return globalAuth.token; }
 
-let _tokenStore: { token: string; user: AuthUser } | null = null;
-
 export function setAuth(token: string, user: AuthUser) {
   globalAuth = { user, token, loading: false };
-  _tokenStore = { token, user };
+  saveToStorage(token, user);
   notify();
 }
 
 export function clearAuth() {
   globalAuth = { user: null, token: null, loading: false };
-  _tokenStore = null;
+  clearStorage();
   notify();
 }
 
 export function initAuth() {
-  if (_tokenStore) {
-    globalAuth = { user: _tokenStore.user, token: _tokenStore.token, loading: false };
+  const saved = loadFromStorage();
+  if (saved) {
+    globalAuth = { user: saved.user, token: saved.token, loading: false };
   } else {
     globalAuth = { ...globalAuth, loading: false };
   }
